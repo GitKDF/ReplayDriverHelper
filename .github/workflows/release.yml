@@ -1,0 +1,91 @@
+name: Create Zip Package and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (x.y)"
+        required: true
+        type: string
+      changelog:
+        description: "Changelog entry for this release"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set variables
+        run: |
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "ZIP_NAME=ReplayDriverHelper-v${{ github.event.inputs.version }}.zip" >> $GITHUB_ENV
+
+      - name: Validate version format (x.y, no leading zeros)
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+
+          # Must match x.y
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: Version must be in the form x.y (e.g. 1.4)"
+            exit 1
+          fi
+
+          # Reject leading zeros (01.2 or 1.02)
+          if [[ "$VERSION" =~ ^0[0-9] ]]; then
+            echo "ERROR: Major version cannot have leading zeros"
+            exit 1
+          fi
+
+          if [[ "$VERSION" =~ \.0[0-9] ]]; then
+            echo "ERROR: Minor version cannot have leading zeros"
+            exit 1
+          fi
+      
+      - name: Validate manifest.ini version matches input
+        run: |
+          MANIFEST_FILE="ReplayDriverHelper/assettocorsa/apps/lua/ReplayDriverHelper/manifest.ini"
+      
+          if [[ ! -f "$MANIFEST_FILE" ]]; then
+            echo "ERROR: manifest.ini not found at expected path: $MANIFEST_FILE"
+            exit 1
+          fi
+      
+          # Extract VERSION value (strip spaces)
+          MANIFEST_VERSION=$(grep -E "^VERSION" "$MANIFEST_FILE" | sed 's/.*= *//')
+      
+          if [[ -z "$MANIFEST_VERSION" ]]; then
+            echo "ERROR: VERSION entry not found in manifest.ini"
+            exit 1
+          fi
+      
+          echo "Manifest version: $MANIFEST_VERSION"
+          echo "Input version: ${{ github.event.inputs.version }}"
+      
+          # Compare versions
+          if [[ "$MANIFEST_VERSION" != "${{ github.event.inputs.version }}" ]]; then
+            echo "ERROR: manifest.ini VERSION ($MANIFEST_VERSION) does not match workflow version (${{ github.event.inputs.version }})"
+            exit 1
+          fi
+
+      - name: Create ZIP package
+        run: |
+          mkdir package
+          # Copy your AC plugin folder structure into ./package
+          cp -r ./apps/lua/ReplayDriverHelper ./package/
+          cd package
+          zip -r "../$ZIP_NAME" .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v${{ env.VERSION }}"
+          name: "Replay Driver Helper v${{ env.VERSION }}"
+          body: ${{ github.event.inputs.changelog }}
+          files: ${{ env.ZIP_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
