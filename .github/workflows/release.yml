@@ -56,7 +56,7 @@ jobs:
           fi
       
           # Extract VERSION value (strip spaces)
-          MANIFEST_VERSION=$(grep -E "^VERSION" "$MANIFEST_FILE" | sed 's/.*= *//')
+          MANIFEST_VERSION=$(grep -E "^VERSION" "$MANIFEST_FILE" | sed 's/.*= *//' | xargs)
       
           if [[ -z "$MANIFEST_VERSION" ]]; then
             echo "ERROR: VERSION entry not found in manifest.ini"
