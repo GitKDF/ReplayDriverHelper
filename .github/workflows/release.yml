@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir package
           # Copy your AC plugin folder structure into ./package
-          cp -r ./apps/lua/ReplayDriverHelper ./package/
+          cp -r ./ReplayDriverHelper/assettocorsa ./package/
           cd package
           zip -r "../$ZIP_NAME" .
 
