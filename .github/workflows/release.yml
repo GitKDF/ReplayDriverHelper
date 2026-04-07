@@ -48,7 +48,7 @@ jobs:
       
       - name: Validate manifest.ini version matches input
         run: |
-          MANIFEST_FILE="ReplayDriverHelper/assettocorsa/apps/lua/ReplayDriverHelper/manifest.ini"
+          MANIFEST_FILE="assettocorsa/apps/lua/ReplayDriverHelper/manifest.ini"
       
           if [[ ! -f "$MANIFEST_FILE" ]]; then
             echo "ERROR: manifest.ini not found at expected path: $MANIFEST_FILE"
@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir package
           # Copy your AC plugin folder structure into ./package
-          cp -r ./ReplayDriverHelper/assettocorsa ./package/
+          cp -r ./assettocorsa ./package/
           cd package
           zip -r "../$ZIP_NAME" .
 
